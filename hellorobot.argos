@@ -52,7 +52,7 @@
 
 
     <!-- Place the robot in a given precise position  -->
-    <foot-bot id="fb">
+    <foot-bot id="fb1">
       <controller config="lua" />
       <body position="1,0,0" orientation="180,0,0" />
     </foot-bot>
