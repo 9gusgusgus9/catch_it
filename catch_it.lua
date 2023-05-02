@@ -15,11 +15,7 @@ local vector = require "vector"
 --[[ This function is executed every time you press the 'execute'
      button ]]
 function init()
-	left_v = robot.random.uniform(0,MAX_VELOCITY)
-	right_v = robot.random.uniform(0,MAX_VELOCITY)
-	robot.wheels.set_velocity(left_v,right_v)
-	n_steps = 0
-	robot.leds.set_all_colors("black")
+	reset()
 end
 
 
@@ -78,8 +74,8 @@ function logStats()
 	-- log("robot.position.z = " .. robot.positioning.position.z)
 	
 	
-	light_front = robot.light[1].value + robot.light[24].value
-	log("robot.light_front = " .. light_front)
+	-- light_front = robot.light[1].value + robot.light[24].value
+	-- log("robot.light_front = " .. light_front)
 
 	-- -- Search for the reading with the highest value
 	-- value = -1 -- highest value found so far
@@ -96,26 +92,6 @@ function logStats()
 	-- vector = vector_avoid_obstacles()
 	-- log("avoid_obstacles_vector_length: " .. vector.length)
 	-- log("avoid_obstacles_vector_angle: " .. vector.angle)
-end
-
--- This method ste the robot led on if it is close to the light
-function setLedWhenCloseToLight()
-	--[[ Check if close to light 
-	(note that the light threshold depends on both sensor and actuator characteristics) ]]
-	light = false
-	sum = 0
-	for i=1,#robot.light do
-		sum = sum + robot.light[i].value
-	end
-	if sum > LIGHT_THRESHOLD then
-		light = true
-	end
-	
-	if light == true then
-		robot.leds.set_all_colors("yellow")
-	else
-		robot.leds.set_all_colors("black")
-	end
 end
 
 
@@ -136,9 +112,6 @@ function step()
 	
 	-- Log the stats of the robot
 	logStats()
-
-	-- Set the led of the robot
-	setLedWhenCloseToLight()
 
 end
 
