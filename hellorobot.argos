@@ -1,47 +1,42 @@
 <?xml version="1.0" ?>
- 
 <argos-configuration>
- 
+
   <!-- ************************* -->
   <!-- * General configuration * -->
   <!-- ************************* -->
   <framework>
-    <system threads="0" />
-    <experiment length="0"
-                ticks_per_second="10"
-     />
-<!--    You may want to set the seed of the RNG by: random_seed = "1" (or any n>0) in experiment  -->
-<!-- 		If you don't do this, the RNG is initialised by taking the CPU time -->
+    <experiment length="0" ticks_per_second="10" />
   </framework>
-  
- 
+
   <!-- *************** -->
   <!-- * Controllers * -->
   <!-- *************** -->
   <controllers>
- 
+
+    <!-- ***************************************************** -->
+    <!-- * This is the Lua controller to associate to robots * -->
+    <!-- ***************************************************** -->
     <lua_controller id="lua">
+      <!-- Normal actuator/sensor configuration follows -->
       <actuators>
-        <differential_steering implementation="default" noise_level="0.0"/>
-	      <leds implementation="default" medium="leds" />
+        <differential_steering implementation="default" />
+        <range_and_bearing implementation="default" />
+	<leds implementation="default" medium="leds" />
       </actuators>
       <sensors>
         <differential_steering implementation="default" noise_level="0.0" />
-        <footbot_proximity implementation="default" show_rays="true" noise_level="0.0" />
-        <footbot_light implementation="rot_z_only" show_rays="true" noise_level="0.0" />
-				<positioning implementation="default" noise_level="0.0" />
+        <footbot_proximity implementation="default" show_rays="false" />
+        <range_and_bearing implementation="medium" medium="rab" show_rays="true"/>
       </sensors>
       <params script="catch_it.lua" />
     </lua_controller>
- 
+
   </controllers>
- 
 
   <!-- *********************** -->
   <!-- * Arena configuration * -->
   <!-- *********************** -->
   <arena size="4, 4, 1" center="0,0,0.5" positional_grid_size="8,8,1">
-  	<!--<floor id="f" source="image" path="four_spots.png" />-->
     <box id="bn" size="0.1, 4, 0.2" movable="false">
       <body position="1.9, 0, 0"  orientation="0,0,0" />
     </box>
@@ -57,7 +52,7 @@
 
 
     <!-- Place the robot in a given precise position  -->
-    <foot-bot id="fb1">
+    <foot-bot id="fb">
       <controller config="lua" />
       <body position="1,0,0" orientation="180,0,0" />
     </foot-bot>
@@ -66,26 +61,26 @@
       <body position="-1,0,0" orientation="0,0,0" />
     </foot-bot>
   </arena>
- 
+
   <!-- ******************* -->
   <!-- * Physics engines * -->
   <!-- ******************* -->
   <physics_engines>
     <dynamics2d id="dyn2d" />
   </physics_engines>
- 
+
   <!-- ********* -->
   <!-- * Media * -->
   <!-- ********* -->
   <media>
+    <range_and_bearing id="rab" index="grid" grid_size="1,1,1" />
     <led id="leds" />
   </media>
 
-	
   <!-- ****************** -->
   <!-- * Visualization * -->
   <!-- ****************** -->
-  <visualization>
+   <visualization>
     <qt-opengl lua_editor="false">
 		<camera>
       <placements>
@@ -96,5 +91,5 @@
     </camera>
     </qt-opengl>
   </visualization>
- 
+
 </argos-configuration>
