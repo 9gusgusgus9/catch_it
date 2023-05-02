@@ -11,7 +11,6 @@ right_v = 0
 local L = robot.wheels.axis_length
 local vector = require "vector"
 
-
 --[[ This function is executed every time you press the 'execute'
      button ]]
 function init()
@@ -32,32 +31,14 @@ function setVelocity(vel)
 	robot.wheels.set_velocity(vel.left,vel.right)
 end
 
-function vector_avoid_obstacles()
+function vector_catch_it()
 	vec = {length = 0, angle = 0}
-	for i=1,#robot.proximity do
-		ang = robot.proximity[i].angle
-		if ang > 0 then
-			ang = ang - math.pi
-		else
-			ang = ang + math.pi
-		end
-		vec = vector.vec2_polar_sum(vec, {length = robot.proximity[i].value, angle = ang})
-	end
-	return vec
+	return vec;
 end
 
-function vector_phototaxis()
-	local vec = {length = 0, angle = 0}
-	for i=1,#robot.light do
-		lum = robot.light[i].value
-		len = 0
-		if lum > 0 then
-			-- len = 1 - lum
-			len = math.abs(lum - 0.5) + 0.5
-		end
-		vec = vector.vec2_polar_sum(vec, {length = len, angle = robot.light[i].angle})
-	end
-	return vec
+function vector_get_out()
+	vec = {length = 0, angle = 0}
+	return vec;
 end
 
 function from_vector_to_velocities(vec)
