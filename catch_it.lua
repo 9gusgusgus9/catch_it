@@ -30,7 +30,7 @@ function step()
         vec_catch = vector_catch_it()
         vec_catch.length = 5
 
-        vec = vector_avoid_obstacles()
+        vec = vector_avoid_ostacles_exclude_target()
         vec.length = vec.length * 10
         vec = vector.vec2_polar_sum(vec, vec_catch)
         
@@ -47,7 +47,7 @@ function step()
         vec_get_out = vector_get_out()
         vec_get_out.length = 5
         
-        vec = vector_avoid_obstacles()
+        vec = vector_avoid_obstacles_force_enemy()
         vec.length = vec.length * 10
         vec = vector.vec2_polar_sum(vec, vec_get_out)
         
@@ -86,8 +86,10 @@ function vector_get_out()
 	return vec
 end
 
-function vector_avoid_obstacles()
+function vector_avoid_obstacles_force_enemy()
 	vec = {length = 0, angle = 0}
+    enemy = vector_get_out()
+    enemy.length = 0.5
 	for i=1,#robot.proximity do
 		ang = robot.proximity[i].angle
 		if ang > 0 then
@@ -97,8 +99,29 @@ function vector_avoid_obstacles()
 		end
 		vec = vector.vec2_polar_sum(vec, {length = robot.proximity[i].value, angle = ang})
 	end
+    
+    vec = vector.vec2_polar_sum(vec, enemy)
 	return vec
 end
+
+function vector_avoid_ostacles_exclude_target()
+    vec = {length = 0, angle = 0}
+    target = vector_catch_it()
+    target.length = 0.5
+    for i=1,#robot.proximity do
+        ang = robot.proximity[i].angle
+        if ang > 0 then
+            ang = ang - math.pi
+        else
+            ang = ang + math.pi
+        end
+        vec = vector.vec2_polar_sum(vec, {length = robot.proximity[i].value, angle = ang})
+    end
+
+    vec = vector.vec2_polar_sum(vec, target)
+    return vec
+end
+
 
 function from_vector_to_velocities(vec)
 	local vel = { left = 0, right = 0}
