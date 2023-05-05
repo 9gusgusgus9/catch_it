@@ -3,19 +3,36 @@
 MOVE_STEPS = 15
 MAX_VELOCITY = 10
 LIGHT_THRESHOLD = 1.5
-
+TIME_TO_SWITCH = 50
+RANGE_MIN = 19
+Status = {HERO = 0, ENEMY = 1, BECOMING_ENEMY = 2}
 
 n_steps = 0
 left_v = 0
 right_v = 0
 local L = robot.wheels.axis_length
 local vector = require "vector"
-local enemy = "fb1"
+local my_status
+local time_from_last_switch = -50
 
 --[[ This function is executed every time you press the 'execute'
      button ]]
 function init()
+    if robot.id == "fb1" then
+        my_status = Status.HERO
+    else
+        my_status = Status.ENEMY
+    end
     reset()
+end
+
+function switch_status()
+    if my_status == Status.HERO then
+        time_from_last_switch = n_steps
+        my_status = Status.BECOMING_ENEMY
+    elseif my_status == Status.ENEMY then
+        my_status = Status.HERO
+    end
 end
 
 --[[ This function is executed at each time step
@@ -23,9 +40,16 @@ end
 function step()
 	-- Set the robot led on if it is close to the light
 	n_steps = n_steps + 1
-    if robot.id == enemy then
+    if my_status == Status.BECOMING_ENEMY then
+        robot.leds.set_all_colors("yellow")
+        setVelocity({left = 0, right = 0})
+        if time_from_last_switch + TIME_TO_SWITCH < n_steps then
+            my_status = Status.ENEMY
+        end
+    elseif my_status == Status.ENEMY then
+        
         robot.leds.set_all_colors("red")
-        robot.range_and_bearing.set_data(1, 1)
+        robot.range_and_bearing.set_data(1, 0)
 
         vec_catch = vector_catch_it()
         vec_catch.length = 5
@@ -35,15 +59,22 @@ function step()
         vec = vector.vec2_polar_sum(vec, vec_catch)
         
         if vec.length > 0 then
-            log("vec.length = " .. vec.length .. " vec.angle = " .. vec.angle)
+            --log("vec.length = " .. vec.length .. " vec.angle = " .. vec.angle)
             setVelocity(from_vector_to_velocities(vec))
         else
             goRandom()
         end
+
+        if robot.range_and_bearing[1] ~= nil then
+            if robot.range_and_bearing[1].range < RANGE_MIN then
+                switch_status()
+                time_from_last_switch = n_steps
+            end
+        end
     else
         robot.leds.set_all_colors("green")
         robot.range_and_bearing.set_data(1, 0)
-        
+
         vec_get_out = vector_get_out()
         vec_get_out.length = 5
         
@@ -52,10 +83,15 @@ function step()
         vec = vector.vec2_polar_sum(vec, vec_get_out)
         
         if vec.length > 0 then
-            log("vec.length = " .. vec.length .. " vec.angle = " .. vec.angle)
             setVelocity(from_vector_to_velocities(vec))
         else
             goRandom()
+        end
+        if robot.range_and_bearing[1] ~= nil then
+            if robot.range_and_bearing[1].range < RANGE_MIN  and time_from_last_switch + TIME_TO_SWITCH < n_steps then
+                log(robot.id .. ": ho preso l'altro robot")
+                switch_status()
+            end
         end
     end
 
