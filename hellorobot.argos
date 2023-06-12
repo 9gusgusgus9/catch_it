@@ -21,7 +21,7 @@
       <actuators>
         <differential_steering implementation="default" />
         <range_and_bearing implementation="default" />
-	<leds implementation="default" medium="leds" />
+	      <leds implementation="default" medium="leds" />
       </actuators>
       <sensors>
         <differential_steering implementation="default" noise_level="0.0" />
