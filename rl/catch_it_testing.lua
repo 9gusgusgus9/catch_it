@@ -51,14 +51,6 @@ function init()
         ["E"] = - math.pi / 2, -- -90 degree
         ["NE"] = - math.pi / 4, -- -45 degree
     }
-    -- velocity_direction_names = {"WNW", "NNW", "N", "NNE", "ENE"}
-    -- velocity_directions = {
-    --     ["WNW"] = math.pi / 4, -- 45 degree
-    --     ["NNW"] = math.pi / 8, -- 22.5 degree
-    --     ["N"] = 0,
-    --     ["NNE"] = - math.pi / 8, -- -22.5 degree
-    --     ["ENE"] = - math.pi / 4, -- -45 degree
-    -- }
 
     number_of_actions = #velocity_direction_names
 
