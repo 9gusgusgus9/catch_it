@@ -178,9 +178,11 @@ function setVelocity(vel)
 end
 
 function logStats()
-    log("robot.range_and_bearing[1].data[1] = " .. robot.range_and_bearing[1].data[1])
-    log("robot.range_and_bearing[1].horizontal_bearing = " .. robot.range_and_bearing[1].horizontal_bearing)
-    log("robot.range_and_bearing[1].range = " .. robot.range_and_bearing[1].range)
+    if robot.range_and_bearing[1] ~= nil then
+        log("robot.range_and_bearing[1].data[1] = " .. robot.range_and_bearing[1].data[1])
+        log("robot.range_and_bearing[1].horizontal_bearing = " .. robot.range_and_bearing[1].horizontal_bearing)
+        log("robot.range_and_bearing[1].range = " .. robot.range_and_bearing[1].range)
+    end
 end
 
 --[[ This function is executed every time you press the 'reset'
