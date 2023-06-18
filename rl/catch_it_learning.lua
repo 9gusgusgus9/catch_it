@@ -1,8 +1,8 @@
 -- Put your global variables here
 
-MOVE_STEPS = 5
-MAX_VELOCITY = 5
-FILENAME = "Qtable-catch_it.csv"
+MOVE_STEPS = 3
+MAX_VELOCITY = 10
+FILENAME = "./Qtable-catch_it.csv"
 LIGHT_THRESHOLD = 1.5
 TIME_TO_SWITCH = 50
 RANGE_MIN = 19
@@ -15,6 +15,7 @@ local L = robot.wheels.axis_length
 local vector = require "vector"
 local Qlearning = require "Qlearning"
 local my_status
+local states = {}
 local time_from_last_switch = -50
 
 --[[ This function is executed every time you press the 'execute'
@@ -31,10 +32,22 @@ function init()
     state = old_state
     action = 3
 
-    --States: one state for each degree of the circle
-    number_of_states = 361
+    --States: one state for ranges of degree mixed with distance
+    angle_states = { -157.5, -135, -112.5, -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180 }
+    distance_states = {  30, 60, 90, 120, 150, 180, 210, 240, 270, 300}
+    number_of_states = #angle_states * #distance_states
+    
+    counter = 1
+    for i = 1, #angle_states do
+        local states_distance = {}
+        for j = 1, #distance_states do
+            states_distance[j] = counter
+            counter = counter + 1
+        end
+        states[i] = states_distance
+    end
 
-    --Actions: 5 in total
+    --Actions: 8 in total
     -- Threre is no symmetry: a vector direction cannot be cancelled by a opposite vector.
     -- In this way we avoid stupid behaviours such that go forward and then immediately backward.
     velocity_direction_names = {"N", "NW", "W", "SW", "S", "SE", "E", "NE"}
@@ -48,12 +61,12 @@ function init()
         ["E"] = - math.pi / 2, -- -90 degree
         ["NE"] = - math.pi / 4, -- -45 degree
     }
-    
+
     number_of_actions = #velocity_direction_names
 
     Q_table = {}
 
-    -- Dimension: 360 x 5 = 1800 values.
+    -- Dimension: 160 x 8 = 1280
     Q_table = Qlearning.load_Q_table(FILENAME)
 
     robot.wheels.set_velocity(vel.left, vel.right)
@@ -66,29 +79,54 @@ function init()
     reset()
 end
 
+function get_index_of_state(state)
+    local index_ang = 0
+
+    for i = 1, #angle_states do
+        if state.angle <= angle_states[i] then
+            index_ang = i
+            break
+        end
+    end
+    for i = 1, #distance_states do
+        if state.range <= distance_states[i] then
+            index_dist = i
+            break
+        end
+    end
+
+    return states[index_ang][index_dist]
+end
+
+
 function get_state()
     --States goes from -1 (i don't see the other robot) to 359
-    local new_state = {angle = 361, range = -1}
+    local new_state = {angle = 0, range = -1}
 
     if robot.range_and_bearing[1] ~= nil then
         new_state.range = robot.range_and_bearing[1].range
         new_state.angle = robot.range_and_bearing[1].horizontal_bearing
-        new_state.angle = math.floor(math.deg(new_state.angle) + 181)
+        new_state.angle = math.floor(math.deg(new_state.angle))
     end
     return new_state
 end
 
-function get_reward(old_state)
-    if robot.range_and_bearing[1] ~= nil then
-        local range = robot.range_and_bearing[1].range
-        if range < RANGE_MIN then
-            return 1
-        elseif old_state.range == -1 then
-            return 1
+function get_reward(state, old_state)
+    if state.range == -1 then
+        return 0
+    elseif state.range < RANGE_MIN then
+        return 1
+    else
+        angle_reward = (math.abs(state.angle) - math.abs(old_state.angle)) / 540
+        distance_reward = (state.range - old_state.range) / 900
+        if angle_reward < 0 then
+            angle_reward = 0
         end
-        return (range - old_state.range)/300
+        if distance_reward < 0 then
+            distance_reward = 0
+        end
+        return angle_reward + (2*distance_reward)
     end
-    return -1
 end
 
 function perform_action(action)
@@ -142,10 +180,14 @@ function step()
         robot.range_and_bearing.set_data(1, 0)
         if n_steps % MOVE_STEPS == 0 then
             state = get_state()
-            reward = get_reward(old_state)
-            Q_table = Qlearning.update_Q_table(alpha, gamma, old_state.angle, action, reward, state.angle, Q_table)
+            old_state_index = get_index_of_state(old_state)
+            state_index = get_index_of_state(state)
 
-            action = Qlearning.get_random_action(epsilon, state.angle, Q_table)
+
+            reward = get_reward(state, old_state)
+            Q_table = Qlearning.update_Q_table(alpha, gamma, old_state_index, action, reward, state_index, Q_table)
+
+            action = Qlearning.get_random_action(epsilon, state_index, Q_table)
             perform_action(action)
 
             old_state = state

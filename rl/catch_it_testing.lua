@@ -1,8 +1,8 @@
 -- Put your global variables here
 
-MOVE_STEPS = 5
+MOVE_STEPS = 3
 MAX_VELOCITY = 10
-FILENAME = "Qtable-catch_it.csv"
+FILENAME = "./Qtable-catch_it.csv"
 LIGHT_THRESHOLD = 1.5
 TIME_TO_SWITCH = 50
 RANGE_MIN = 19
@@ -16,6 +16,7 @@ local vector = require "vector"
 local Qlearning = require "Qlearning"
 local my_status
 local time_from_last_switch = -50
+local states =  {}
 
 --[[ This function is executed every time you press the 'execute'
      button ]]
@@ -35,9 +36,22 @@ function init()
     action = 0
 
     --States: one state for each degree of the circle
-    number_of_states = 361
+    angle_states = { -157.5, -135, -112.5, -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180 }
+    distance_states = { 30, 60, 90, 120, 150, 180, 210, 240, 270, 300}
+    number_of_states = #angle_states * #distance_states
+    
+    counter = 1
+    for i = 1, #angle_states do
+        local states_distance = {}
+        for j = 1, #distance_states do
+            states_distance[j] = counter
+            counter = counter + 1
+        end
+        states[i] = states_distance
+    end
 
-    --Actions: 5 in total
+
+    --Actions: 8 in total
     -- Threre is no symmetry: a vector direction cannot be cancelled by a opposite vector.
     -- In this way we avoid stupid behaviours such that go forward and then immediately backward.
     velocity_direction_names = {"N", "NW", "W", "SW", "S", "SE", "E", "NE"}
@@ -56,7 +70,7 @@ function init()
 
     Q_table = {}
 
-    -- Dimension: 360 x 5 = 1800 values.
+    -- Dimension: 160 x 8 = 1280
     Q_table = Qlearning.load_Q_table(FILENAME)
 
     setVelocity(vel)
@@ -67,6 +81,24 @@ function init()
         my_status = Status.ENEMY
     end
     reset()
+end
+
+function get_index_of_state(state)
+    local index_ang = 0
+    for i = 1, #angle_states do
+        if state.angle <= angle_states[i] then
+            index_ang = i
+            break
+        end
+    end
+    for i = 1, #distance_states do
+        if state.range <= distance_states[i] then
+            index_dist = i
+            break
+        end
+    end
+
+    return states[index_ang][index_dist]
 end
 
 function competenceNegative()
@@ -102,22 +134,24 @@ function competencePositive()
 
     function get_state()
         --States goes from -1 (i don't see the other robot) to 359
-        local new_state = 361
+        local new_state = {angle = 0, range = -1}
         if robot.range_and_bearing[1] ~= nil then
-            local range = robot.range_and_bearing[1].range
-            local angle = robot.range_and_bearing[1].horizontal_bearing
-            new_state = math.floor(math.deg(angle) + 181)
+            new_state.range = robot.range_and_bearing[1].range
+            new_state.angle = robot.range_and_bearing[1].horizontal_bearing
+            new_state.angle = math.floor(math.deg(new_state.angle))
         end
         return new_state
     end
 
     local state = get_state()
-    local action = Qlearning.get_best_action(state, Q_table)
+    local index = get_index_of_state(state)
+    local action = Qlearning.get_best_action(index, Q_table)
+    log("action: " .. velocity_direction_names[action] .. " index: " .. index .. " state: " .. state.angle .. " " .. state.range)
     local subsumption = true
 
     total_state_acquisition = total_state_acquisition + 1
 
-    if state == 361 then
+    if state.range == -1 then
         subsumption = false
     else
         on_catching_acquisition = on_catching_acquisition + 1
@@ -191,7 +225,7 @@ function step()
     end
 
 	-- Log the stats of the robot
-	logStats()
+	-- logStats()
 end
 
 --This function return the best way for the enemy

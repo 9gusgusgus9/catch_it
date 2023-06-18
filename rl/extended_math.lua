@@ -20,6 +20,20 @@ function calculator.argmax(array)
 
 end
 
+function calculator.valmax(array)
+  
+    local max_value = - math.huge
+    for i = 1, #array do 
+      if (array[i] > max_value) then
+        max_value = array[i]
+      end
+    end
+  
+    return max_value
+  
+  end
+
+
 --- Get a random element with weighted selection.
 -- Function based on https://rosettacode.org/wiki/Probabilistic_choice#Lua
 --

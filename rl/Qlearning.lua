@@ -20,7 +20,7 @@ function q.create_Q_table(number_of_states, number_of_actions)
   for i = 1, number_of_states do
     Q_table[i] = {}
     for j = 1, number_of_actions do
-      Q_table[i][j] = -2
+      Q_table[i][j] = 0
     end
   end
   
@@ -37,10 +37,16 @@ function q.save_Q_table(file_name, Q_table)
   local file = assert(io.open(file_name, "w"), "Impossible to create the file " .. file_name .. " .")
   for i = 1, #Q_table do
     file:write(Q_table[i][1])
+    file:flush()
     for j = 2, #Q_table[1] do
       file:write(", " .. Q_table[i][j])
+      file:flush()
+      if Q_table[i][j] ~= 0 then
+        log("Writing q["..i.."]["..j.."]: " .. Q_table[i][j])
+      end
     end
     file:write("\n")
+    file:flush()
   end
   file:close()
   
@@ -60,6 +66,7 @@ function q.load_Q_table(file_name)
     local j = 1
     for value in line:gmatch("([^,%s]+)") do
       Q_table[i][j] = tonumber(value)
+      log("Reading q["..i.."]["..j.."]: " .. Q_table[i][j])
       j = j + 1
     end
     i = i + 1
@@ -77,7 +84,9 @@ end
 -- @return the index of the action with the greatest value.
 function q.get_best_action(state, Q_table)
   --log("state: " .. state)
-  return calculator.argmax(Q_table[state])
+  reward = Q_table[state]
+  --log("REWARD: " .. calculator.valmax(reward))
+  return calculator.argmax(reward)
   
 end
 
@@ -98,10 +107,10 @@ function q.update_Q_table(alpha, gamma, state, action, reward, future_state, Q_t
   assert(gamma <= 1, "Invalid argument: gamma must be lower or equal to 1.")
   assert(gamma >= 0, "Invalid argument: gamma must be greater or equal to 0.")
 
-  -- Q_table[state][action] = (1-alpha) * Q_table[state][action] + alpha * (reward + gamma * math.max(table.unpack(Q_table[future_state])))
-  if Q_table[state][action] < reward then
-    Q_table[state][action] = reward
-  end
+  Q_table[state][action] = (1-alpha) * Q_table[state][action] + alpha * (reward + gamma * math.max(table.unpack(Q_table[future_state])))
+  -- if Q_table[state][action] < reward then
+  --   Q_table[state][action] = reward
+  -- end
   return Q_table
   
 end
