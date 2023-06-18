@@ -37,16 +37,10 @@ function q.save_Q_table(file_name, Q_table)
   local file = assert(io.open(file_name, "w"), "Impossible to create the file " .. file_name .. " .")
   for i = 1, #Q_table do
     file:write(Q_table[i][1])
-    file:flush()
     for j = 2, #Q_table[1] do
       file:write(", " .. Q_table[i][j])
-      file:flush()
-      if Q_table[i][j] ~= 0 then
-        log("Writing q["..i.."]["..j.."]: " .. Q_table[i][j])
-      end
     end
     file:write("\n")
-    file:flush()
   end
   file:close()
   
@@ -66,7 +60,6 @@ function q.load_Q_table(file_name)
     local j = 1
     for value in line:gmatch("([^,%s]+)") do
       Q_table[i][j] = tonumber(value)
-      log("Reading q["..i.."]["..j.."]: " .. Q_table[i][j])
       j = j + 1
     end
     i = i + 1
@@ -84,9 +77,9 @@ end
 -- @return the index of the action with the greatest value.
 function q.get_best_action(state, Q_table)
   --log("state: " .. state)
-  reward = Q_table[state]
-  --log("REWARD: " .. calculator.valmax(reward))
-  return calculator.argmax(reward)
+  actions = Q_table[state]
+  --log("REWARD: " .. calculator.valmax(actions))
+  return calculator.argmax(actions)
   
 end
 
