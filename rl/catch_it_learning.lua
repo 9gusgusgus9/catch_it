@@ -1,8 +1,8 @@
 -- Put your global variables here
 
 MOVE_STEPS = 3
-MAX_VELOCITY = 10
-FILENAME = "./Qtable-catch_it.csv"
+MAX_VELOCITY = 20
+FILENAME = "Qtable-catch-it.csv"
 LIGHT_THRESHOLD = 1.5
 TIME_TO_SWITCH = 50
 RANGE_MIN = 19
@@ -15,7 +15,6 @@ local L = robot.wheels.axis_length
 local vector = require "vector"
 local Qlearning = require "Qlearning"
 local my_status
-local states = {}
 local time_from_last_switch = -50
 
 --[[ This function is executed every time you press the 'execute'
@@ -36,16 +35,6 @@ function init()
     angle_states = { -157.5, -135, -112.5, -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180 }
     distance_states = {  30, 60, 90, 120, 150, 180, 210, 240, 270, 300}
     number_of_states = #angle_states * #distance_states
-    
-    counter = 1
-    for i = 1, #angle_states do
-        local states_distance = {}
-        for j = 1, #distance_states do
-            states_distance[j] = counter
-            counter = counter + 1
-        end
-        states[i] = states_distance
-    end
 
     --Actions: 8 in total
     -- Threre is no symmetry: a vector direction cannot be cancelled by a opposite vector.
@@ -67,7 +56,6 @@ function init()
     Q_table = {}
 
     -- Dimension: 160 x 8 = 1280
-    Q_table = Qlearning.load_Q_table(FILENAME)
 
     robot.wheels.set_velocity(vel.left, vel.right)
 
@@ -75,6 +63,7 @@ function init()
         my_status = Status.HERO
     else
         my_status = Status.ENEMY
+        Q_table = Qlearning.load_Q_table(FILENAME)
     end
     reset()
 end
@@ -95,7 +84,7 @@ function get_index_of_state(state)
         end
     end
 
-    return states[index_ang][index_dist]
+    return (((index_ang - 1) * #distance_states) + index_dist)
 end
 
 
@@ -117,7 +106,15 @@ function get_reward(state, old_state)
     elseif state.range < RANGE_MIN then
         return 1
     else
-        angle_reward = (math.abs(state.angle) - math.abs(old_state.angle)) / 540
+        if (state.angle > 0 and old_state.angle > 0) or (state.angle < 0 and old_state.angle < 0) then
+            angle_reward = (math.abs(state.angle) - math.abs(old_state.angle)) / 540
+        elseif state.angle == 0 then 
+            angle_reward = 0.66
+        elseif state.angle < 10 and state.angle > -10 then
+            angle_reward = 0.65
+        else
+            angle_reward = 0
+        end
         distance_reward = (state.range - old_state.range) / 900
         if angle_reward < 0 then
             angle_reward = 0
@@ -155,11 +152,12 @@ function perform_action(action)
 end
 
 function switch_status()
+    time_from_last_switch = n_steps
     if my_status == Status.HERO then
-        time_from_last_switch = n_steps
         my_status = Status.BECOMING_ENEMY
     elseif my_status == Status.ENEMY then
         my_status = Status.HERO
+        Qlearning.save_Q_table(FILENAME, Q_table)
     end
 end
 
@@ -174,6 +172,7 @@ function step()
         setVelocity({left = 0, right = 0})
         if time_from_last_switch + TIME_TO_SWITCH < n_steps then
             my_status = Status.ENEMY
+            Q_table = Qlearning.load_Q_table(FILENAME)
         end
     elseif my_status == Status.ENEMY then
         robot.leds.set_all_colors("red")
@@ -331,6 +330,7 @@ end
      from the simulation ]]
 function destroy()
    -- put your code here
-
-   Qlearning.save_Q_table(FILENAME, Q_table)
+    if my_status == Status.ENEMY then
+        Qlearning.save_Q_table(FILENAME, Q_table)
+    end
 end
