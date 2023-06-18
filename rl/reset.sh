@@ -1,5 +1,4 @@
 #!/bin/sh
 
-sudo rm Qtable-catch_it.csv
-sudo lua create_Q-table.lua Qtable-catch_it.csv 160 8
-sudo chmod 777 Qtable-catch_it.csv
+rm Qtable-catch-it.csv
+lua create_Q-table.lua Qtable-catch-it.csv 160 8
