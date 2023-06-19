@@ -3,14 +3,12 @@
 MOVE_STEPS = 3
 MAX_VELOCITY = 20
 FILENAME = "Qtable-catch-it.csv"
-LIGHT_THRESHOLD = 1.5
 TIME_TO_SWITCH = 50
 RANGE_MIN = 19
 Status = {HERO = 0, ENEMY = 1, BECOMING_ENEMY = 2}
 
 n_steps = 0
-left_v = 0
-right_v = 0
+vel = {}
 local L = robot.wheels.axis_length
 local vector = require "vector"
 local Qlearning = require "Qlearning"
@@ -31,14 +29,12 @@ function init()
     state = old_state
     action = 3
 
-    --States: one state for ranges of degree mixed with distance
+    --States: 160 in total (16 angle states * 10 distance states)
     angle_states = { -157.5, -135, -112.5, -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180 }
     distance_states = {  30, 60, 90, 120, 150, 180, 210, 240, 270, 300}
     number_of_states = #angle_states * #distance_states
 
     --Actions: 8 in total
-    -- Threre is no symmetry: a vector direction cannot be cancelled by a opposite vector.
-    -- In this way we avoid stupid behaviours such that go forward and then immediately backward.
     velocity_direction_names = {"N", "NW", "W", "SW", "S", "SE", "E", "NE"}
     velocity_directions = {
         ["N"] = 0,
@@ -54,7 +50,6 @@ function init()
     number_of_actions = #velocity_direction_names
 
     Q_table = {}
-
     -- Dimension: 160 x 8 = 1280
 
     robot.wheels.set_velocity(vel.left, vel.right)
@@ -67,6 +62,8 @@ function init()
     end
     reset()
 end
+
+
 
 function get_index_of_state(state)
     local index_ang = 0
@@ -89,7 +86,7 @@ end
 
 
 function get_state()
-    --States goes from -1 (i don't see the other robot) to 359
+    --States goes from 1 to 160 (all the combinations of angle and distance)
     local new_state = {angle = 0, range = -1}
 
     if robot.range_and_bearing[1] ~= nil then
@@ -102,19 +99,26 @@ end
 
 function get_reward(state, old_state)
     if state.range == -1 then
+        --If i don't see the hero
         return 0
     elseif state.range < RANGE_MIN then
+        --If i touch the hero
         return 1
     else
         if (state.angle > 0 and old_state.angle > 0) or (state.angle < 0 and old_state.angle < 0) then
+            --If I'm entering the goal towards my center, calculate the difference from old state angle and new state angle normalazite to 0 and 0.66
             angle_reward = (math.abs(state.angle) - math.abs(old_state.angle)) / 540
-        elseif state.angle == 0 then 
+        elseif state.angle == 0 then
+            -- If the hero is in front of me i take the max reward for the angle
             angle_reward = 0.66
         elseif state.angle < 10 and state.angle > -10 then
+            -- If the hero is in front of me i take 0.65 reward for the angle
             angle_reward = 0.65
         else
+            -- Else 0
             angle_reward = 0
         end
+        -- Calculate the difference from old state distance and new state distance normalazite to 0 and 0.33
         distance_reward = (state.range - old_state.range) / 900
         if angle_reward < 0 then
             angle_reward = 0
@@ -122,6 +126,7 @@ function get_reward(state, old_state)
         if distance_reward < 0 then
             distance_reward = 0
         end
+        -- Reward calculated as the sum of the two rewards (66% angle reward + 33% distance reward)
         return angle_reward + (2*distance_reward)
     end
 end
@@ -161,10 +166,7 @@ function switch_status()
     end
 end
 
---[[ This function is executed at each time step
-     It must contain the logic of your controller ]]
 function step()
-	-- Set the robot led on if it is close to the light
 	n_steps = n_steps + 1
 
     if my_status == Status.BECOMING_ENEMY then
@@ -223,17 +225,6 @@ function step()
 	--logStats()
 end
 
---This function return the best way for the enemy
-function vector_catch_it()
-	vec = {length = 0, angle = 0}
-    if robot.range_and_bearing[1] ~= nil then
-        vec.length = robot.range_and_bearing[1].range
-        vec.angle = robot.range_and_bearing[1].horizontal_bearing
-    end
-    return vec
-end
-
-
 function vector_get_out()
 	vec = {length = 0, angle = 0}
     if robot.range_and_bearing[1] ~= nil then
@@ -265,25 +256,6 @@ function vector_avoid_obstacles_force_enemy()
     vec = vector.vec2_polar_sum(vec, enemy)
 	return vec
 end
-
-function vector_avoid_ostacles_exclude_target()
-    vec = {length = 0, angle = 0}
-    target = vector_catch_it()
-    target.length = 0.5
-    for i=1,#robot.proximity do
-        ang = robot.proximity[i].angle
-        if ang > 0 then
-            ang = ang - math.pi
-        else
-            ang = ang + math.pi
-        end
-        vec = vector.vec2_polar_sum(vec, {length = robot.proximity[i].value, angle = ang})
-    end
-
-    vec = vector.vec2_polar_sum(vec, target)
-    return vec
-end
-
 
 function from_vector_to_velocities(vec)
 	local vel = { left = 0, right = 0}
