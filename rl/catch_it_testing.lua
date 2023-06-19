@@ -3,14 +3,12 @@
 MOVE_STEPS = 3
 MAX_VELOCITY = 20
 FILENAME = "Qtable-catch-it.csv"
-LIGHT_THRESHOLD = 1.5
 TIME_TO_SWITCH = 50
 RANGE_MIN = 19
 Status = {HERO = 0, ENEMY = 1, BECOMING_ENEMY = 2}
 
-n_steps = 0
-left_v = 0
-right_v = 0
+n_steps = 
+vel =  {}
 local L = robot.wheels.axis_length
 local vector = require "vector"
 local Qlearning = require "Qlearning"
@@ -31,19 +29,15 @@ function init()
     epsilon = 0.9
     k = 2
 
-    state = old_state
+    state = get_state()
     action = 0
 
-    --States: one state for each degree of the circle
+    --States: 160 in total (16 angle states * 10 distance states)
     angle_states = { -157.5, -135, -112.5, -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180 }
     distance_states = { 30, 60, 90, 120, 150, 180, 210, 240, 270, 300}
     number_of_states = #angle_states * #distance_states
-    
-
 
     --Actions: 8 in total
-    -- Threre is no symmetry: a vector direction cannot be cancelled by a opposite vector.
-    -- In this way we avoid stupid behaviours such that go forward and then immediately backward.
     velocity_direction_names = {"N", "NW", "W", "SW", "S", "SE", "E", "NE"}
     velocity_directions = {
         ["N"] = 0,
@@ -174,6 +168,7 @@ function step()
         end
     elseif my_status == Status.ENEMY then
         robot.leds.set_all_colors("red")
+        robot.range_and_bearing.set_data(1, 0)
         if n_steps % MOVE_STEPS == 0 then
 
             velNegative = competenceNegative()
@@ -218,17 +213,6 @@ function step()
 	-- logStats()
 end
 
---This function return the best way for the enemy
-function vector_catch_it()
-	vec = {length = 0, angle = 0}
-    if robot.range_and_bearing[1] ~= nil then
-        vec.length = robot.range_and_bearing[1].range
-        vec.angle = robot.range_and_bearing[1].horizontal_bearing
-    end
-    return vec
-end
-
-
 function vector_get_out()
 	vec = {length = 0, angle = 0}
     if robot.range_and_bearing[1] ~= nil then
@@ -260,25 +244,6 @@ function vector_avoid_obstacles_force_enemy()
     vec = vector.vec2_polar_sum(vec, enemy)
 	return vec
 end
-
-function vector_avoid_ostacles_exclude_target()
-    vec = {length = 0, angle = 0}
-    target = vector_catch_it()
-    target.length = 0.5
-    for i=1,#robot.proximity do
-        ang = robot.proximity[i].angle
-        if ang > 0 then
-            ang = ang - math.pi
-        else
-            ang = ang + math.pi
-        end
-        vec = vector.vec2_polar_sum(vec, {length = robot.proximity[i].value, angle = ang})
-    end
-
-    vec = vector.vec2_polar_sum(vec, target)
-    return vec
-end
-
 
 function from_vector_to_velocities(vec)
 	local vel = { left = 0, right = 0}
