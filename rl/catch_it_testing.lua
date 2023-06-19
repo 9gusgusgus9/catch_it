@@ -7,7 +7,7 @@ TIME_TO_SWITCH = 50
 RANGE_MIN = 19
 Status = {HERO = 0, ENEMY = 1, BECOMING_ENEMY = 2}
 
-n_steps = 
+n_steps = 0
 vel =  {left = 0, right = 0}
 local L = robot.wheels.axis_length
 local vector = require "vector"
@@ -29,7 +29,7 @@ function init()
     epsilon = 0.9
     k = 2
 
-    state = get_state()
+    state = old_state
     action = 0
 
     --States: 160 in total (16 angle states * 10 distance states)
