@@ -76,9 +76,7 @@ end
 -- @param Q_table the Q table.
 -- @return the index of the action with the greatest value.
 function q.get_best_action(state, Q_table)
-  --log("state: " .. state)
   actions = Q_table[state]
-  --log("REWARD: " .. calculator.valmax(actions))
   return calculator.argmax(actions)
   
 end
