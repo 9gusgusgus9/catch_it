@@ -48,16 +48,6 @@
       <body position="0,0.9,0" orientation="0,0,0" />
     </box>
     
-    <!-- <foot-bot id="fb0">
-      <controller config="lua" />
-      <body position="0.5,0.0,0" orientation="180,0,0" />
-    </foot-bot>
-    <foot-bot id="fb1">
-      <controller config="lua" />
-      <body position="-0.5,0.0,0" orientation="0,0,0" />
-    </foot-bot> -->
-
-
     <!-- If you want to place the robot in a random position you may want to use this piece of code  -->
    <distribute>
       <position method="uniform" min="-0.9,-0.9,0" max="0.9,0.9,0" />
@@ -68,8 +58,6 @@
         </foot-bot>
       </entity>
     </distribute>
-
-
   </arena>
  
   <!-- ******************* -->
