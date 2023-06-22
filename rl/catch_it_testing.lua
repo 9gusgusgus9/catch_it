@@ -32,9 +32,9 @@ function init()
     state = old_state
     action = 0
 
-    --States: 160 in total (16 angle states * 10 distance states)
+    --States: 128 in total (16 angle states * 8 distance states)
     angle_states = { -157.5, -135, -112.5, -90, -67.5, -45, -22.5, 0, 22.5, 45, 67.5, 90, 112.5, 135, 157.5, 180 }
-    distance_states = { 30, 60, 90, 120, 150, 180, 210, 240, 270, 300}
+    distance_states = { 30, 60, 90, 120, 150, 180, 210, 300}
     number_of_states = #angle_states * #distance_states
 
     --Actions: 8 in total
@@ -54,7 +54,7 @@ function init()
 
     Q_table = {}
 
-    -- Dimension: 160 x 8 = 1280
+    -- Dimension: 128 x 8 = 1024
 
     setVelocity(vel)
 
